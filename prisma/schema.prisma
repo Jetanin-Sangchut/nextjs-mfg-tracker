@@ -1,0 +1,114 @@
+// Manufacturing Process Tracker — Star Schema
+// Fact tables: order_step_log, resource_consumption
+// Dimension tables: orders, steps, resources
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── Dimension: steps ────────────────────────────────────────────────────────
+
+model Step {
+  id            String  @id @default(cuid())
+  name          String
+  sequenceOrder Int     @unique
+  description   String?
+
+  orders        Order[]
+  orderStepLogs OrderStepLog[]
+
+  @@map("steps")
+}
+
+// ─── Dimension: resources ────────────────────────────────────────────────────
+
+enum ResourceType {
+  MATERIAL
+  MACHINE
+  LABOUR
+}
+
+model Resource {
+  id           String       @id @default(cuid())
+  name         String
+  unit         String
+  type         ResourceType
+  availableQty Float        @default(0)
+
+  resourceConsumptions ResourceConsumption[]
+
+  @@map("resources")
+}
+
+// ─── Dimension: orders ───────────────────────────────────────────────────────
+
+enum OrderStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  orderNumber   String      @unique
+  productName   String
+  qty           Int
+  status        OrderStatus @default(PENDING)
+  currentStepId String?
+  isDeleted     Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  currentStep   Step?          @relation(fields: [currentStepId], references: [id])
+  orderStepLogs OrderStepLog[]
+
+  @@map("orders")
+}
+
+// ─── Fact: order_step_log ────────────────────────────────────────────────────
+// Immutable audit log — no soft delete (governance policy)
+
+enum StepLogStatus {
+  IN_PROGRESS
+  COMPLETED
+}
+
+model OrderStepLog {
+  id          String        @id @default(cuid())
+  orderId     String
+  stepId      String
+  status      StepLogStatus @default(IN_PROGRESS)
+  actionNote  String?
+  startedAt   DateTime      @default(now())
+  completedAt DateTime?
+  updatedAt   DateTime      @updatedAt
+
+  order                Order                 @relation(fields: [orderId], references: [id])
+  step                 Step                  @relation(fields: [stepId], references: [id])
+  resourceConsumptions ResourceConsumption[]
+
+  @@map("order_step_logs")
+}
+
+// ─── Fact: resource_consumption ──────────────────────────────────────────────
+// Immutable audit log — no soft delete (governance policy)
+
+model ResourceConsumption {
+  id             String   @id @default(cuid())
+  orderStepLogId String
+  resourceId     String
+  qtyUsed        Float
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  orderStepLog OrderStepLog @relation(fields: [orderStepLogId], references: [id])
+  resource     Resource     @relation(fields: [resourceId], references: [id])
+
+  @@map("resource_consumptions")
+}
