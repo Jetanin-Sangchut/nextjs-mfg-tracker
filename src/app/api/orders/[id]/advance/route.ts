@@ -1,6 +1,7 @@
 import { OrderStatus, StepLogStatus } from "@prisma/client"
 import { prisma } from "@/lib/db"
 import { ok, err } from "@/lib/api-response"
+import { restoreWorkerResources } from "@/lib/restore-resources"
 
 type Context = { params: Promise<{ id: string }> }
 
@@ -11,7 +12,6 @@ export async function POST(_: Request, context: Context) {
     where: { id: orderId },
     include: { currentStep: true },
   })
-
   if (!order) return err("Order not found", 404)
   if (order.status === OrderStatus.COMPLETED) return err("Order is already completed")
 
@@ -21,35 +21,36 @@ export async function POST(_: Request, context: Context) {
   const currentSeq = order.currentStep?.sequenceOrder ?? 0
   const nextStep = steps.find(({ sequenceOrder }) => sequenceOrder > currentSeq)
 
-  if (order.currentStepId) {
-    await prisma.orderStepLog.updateMany({
-      where: { orderId, stepId: order.currentStepId, status: StepLogStatus.IN_PROGRESS },
-      data: { status: StepLogStatus.COMPLETED, completedAt: new Date() },
-    })
-  }
+  await prisma.$transaction(async (tx) => {
+    if (order.currentStepId) {
+      const currentLog = await tx.orderStepLog.findFirst({
+        where: { orderId, stepId: order.currentStepId, status: StepLogStatus.IN_PROGRESS },
+        include: { resourceConsumptions: { include: { resource: true } } },
+      })
+      if (currentLog) {
+        await tx.orderStepLog.update({
+          where: { id: currentLog.id },
+          data: { status: StepLogStatus.COMPLETED, completedAt: new Date() },
+        })
+        await restoreWorkerResources(tx, currentLog.resourceConsumptions)
+      }
+    }
 
-  if (!nextStep) {
-    await prisma.order.update({
-      where: { id: orderId },
-      data: { status: OrderStatus.COMPLETED, currentStepId: null },
-    })
-    return ok({ completed: true, stepName: null })
-  }
+    if (nextStep) {
+      await tx.order.update({
+        where: { id: orderId },
+        data: { status: OrderStatus.IN_PROGRESS, currentStepId: nextStep.id },
+      })
+      await tx.orderStepLog.create({
+        data: { orderId, stepId: nextStep.id, status: StepLogStatus.IN_PROGRESS, actionNote: `Moved to ${nextStep.name}` },
+      })
+    } else {
+      await tx.order.update({
+        where: { id: orderId },
+        data: { status: OrderStatus.COMPLETED, currentStepId: order.currentStepId },
+      })
+    }
+  })
 
-  await prisma.$transaction([
-    prisma.order.update({
-      where: { id: orderId },
-      data: { status: OrderStatus.IN_PROGRESS, currentStepId: nextStep.id },
-    }),
-    prisma.orderStepLog.create({
-      data: {
-        orderId,
-        stepId: nextStep.id,
-        status: StepLogStatus.IN_PROGRESS,
-        actionNote: `Moved to ${nextStep.name}`,
-      },
-    }),
-  ])
-
-  return ok({ completed: false, stepName: nextStep.name })
+  return ok({ completed: !nextStep, stepName: nextStep?.name ?? null })
 }
