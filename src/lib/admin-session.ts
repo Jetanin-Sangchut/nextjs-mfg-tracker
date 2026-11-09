@@ -1,9 +1,7 @@
-// Signs and verifies admin session cookies using HMAC-SHA256
-// Uses ADMIN_SECRET env var as the signing key
-// Payload: { iat: number, exp: number } (exp = iat + 24h in seconds)
 // Web Crypto API — Edge Runtime compatible (no Node.js crypto / Buffer)
+import { config } from "@/lib/config"
 
-const SECRET = process.env.ADMIN_SECRET ?? "dev-secret-change-in-prod"
+const SECRET = config.adminSecret
 
 const enc = new TextEncoder()
 
