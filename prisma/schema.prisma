@@ -52,6 +52,9 @@ enum OrderStatus {
   PENDING
   IN_PROGRESS
   COMPLETED
+  REJECTED
+  CANCELLED
+  CUSTOMER_REJECTED
 }
 
 model Order {
