@@ -4,29 +4,6 @@ import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/db"
 import { ORDER_STATUS, STEP_LOG_STATUS } from "../types/order"
 
-export async function createOrder(formData: FormData) {
-  const orderNumber = (formData.get("orderNumber") as string)?.trim()
-  const productName = (formData.get("productName") as string)?.trim()
-  const qtyRaw = formData.get("qty") as string
-
-  if (!orderNumber) return { error: "Order number is required" }
-  if (!productName) return { error: "Product name is required" }
-
-  const qty = parseInt(qtyRaw, 10)
-  if (isNaN(qty) || qty < 1) return { error: "Quantity must be at least 1" }
-
-  const existing = await prisma.order.findUnique({ where: { orderNumber } })
-  if (existing) return { error: `Order number "${orderNumber}" already exists` }
-
-  await prisma.order.create({
-    data: { orderNumber, productName, qty, status: ORDER_STATUS.PENDING },
-  })
-
-  revalidatePath("/orders")
-  revalidatePath("/dashboard")
-  return { success: true }
-}
-
 export async function advanceOrder(orderId: string) {
   const order = await prisma.order.findUnique({
     where: { id: orderId },

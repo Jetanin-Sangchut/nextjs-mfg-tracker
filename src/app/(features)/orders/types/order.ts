@@ -46,3 +46,16 @@ export type ResourceConsumption = {
   qtyUsed: number
   resource: Resource
 }
+
+export type ResourceEntry = {
+  resourceId: string
+  qty: number
+}
+
+export type StepResourceValues = {
+  materials: ResourceEntry[]
+  machines: ResourceEntry[]
+  labourHours: number
+}
+
+export type ResourceState = Record<number, StepResourceValues>

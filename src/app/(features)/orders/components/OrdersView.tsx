@@ -1,8 +1,9 @@
 "use client"
 
 import { useState } from "react"
+import type { ReactNode } from "react"
 import Swal from "sweetalert2"
-import { type Order } from "../types/order"
+import { type Order, type Step, type Resource } from "../types/order"
 import { advanceOrder } from "../actions/order.actions"
 import { OrderForm } from "./OrderForm"
 import { ORDER_STATUS_LABEL, ORDER_STATUS_CLASS } from "@/lib/order-status"
@@ -10,9 +11,22 @@ import { cn } from "@/lib/utils"
 
 type Props = {
   orders: Order[]
+  steps: Step[]
+  resources: Resource[]
 }
 
-export function OrdersView({ orders }: Props) {
+const ORDER_ACTION: Record<string, "advance" | "new"> = {
+  PENDING: "advance",
+  IN_PROGRESS: "advance",
+  COMPLETED: "new",
+  REJECTED: "new",
+  CANCELLED: "new",
+  CUSTOMER_REJECTED: "new",
+}
+
+type Column = { header: string; cell: (o: Order) => ReactNode }
+
+export function OrdersView({ orders, steps, resources }: Props) {
   const [showForm, setShowForm] = useState(false)
   const [advancing, setAdvancing] = useState<string | null>(null)
 
@@ -26,12 +40,44 @@ export function OrdersView({ orders }: Props) {
       return
     }
 
-    if (result?.completed) {
-      Swal.fire({ icon: "success", title: "Order completed!", timer: 1500, showConfirmButton: false })
-    } else {
-      Swal.fire({ icon: "success", title: `Moved to: ${result?.stepName}`, timer: 1500, showConfirmButton: false })
-    }
+    const title = result?.completed ? "Order completed!" : `Moved to: ${result?.stepName}`
+    Swal.fire({ icon: "success", title, timer: 1500, showConfirmButton: false })
   }
+
+  const columns: Column[] = [
+    { header: "Order #", cell: (o) => <td key="n" className="px-4 py-3 font-mono font-medium text-zinc-900">{o.orderNumber}</td> },
+    { header: "Product", cell: (o) => <td key="p" className="px-4 py-3 text-zinc-700">{o.productName}</td> },
+    { header: "Qty", cell: (o) => <td key="q" className="px-4 py-3 text-zinc-700">{o.qty}</td> },
+    { header: "Current Step", cell: (o) => <td key="s" className="px-4 py-3 text-zinc-700">{o.currentStep?.name ?? "—"}</td> },
+    { header: "Status", cell: (o) => (
+      <td key="st" className="px-4 py-3">
+        <span className={cn("inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium", ORDER_STATUS_CLASS[o.status] ?? "bg-zinc-100 text-zinc-700")}>
+          {ORDER_STATUS_LABEL[o.status] ?? o.status}
+        </span>
+      </td>
+    )},
+    { header: "Actions", cell: (o) => (
+      <td key="a" className="px-4 py-3">
+        {ORDER_ACTION[o.status] === "advance" && (
+          <button
+            onClick={() => handleAdvance(o.id)}
+            disabled={advancing === o.id}
+            className="rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+          >
+            {advancing === o.id ? "Moving..." : "Advance →"}
+          </button>
+        )}
+        {ORDER_ACTION[o.status] === "new" && (
+          <button
+            onClick={() => setShowForm(true)}
+            className="rounded bg-zinc-600 px-3 py-1 text-xs font-medium text-white hover:bg-zinc-500"
+          >
+            + New Order
+          </button>
+        )}
+      </td>
+    )},
+  ]
 
   return (
     <div className="space-y-6">
@@ -48,59 +94,29 @@ export function OrdersView({ orders }: Props) {
       {showForm && (
         <div className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-base font-medium text-zinc-900">Create Order</h2>
-          <OrderForm onSuccess={() => setShowForm(false)} />
+          <OrderForm onSuccess={() => setShowForm(false)} steps={steps} resources={resources} />
         </div>
       )}
 
-      {orders.length === 0 ? (
+      {!showForm && orders.length === 0 && (
         <div className="flex items-center justify-center py-20 text-zinc-400">
           No orders yet.
         </div>
-      ) : (
+      )}
+      {!showForm && orders.length > 0 && (
         <div className="overflow-x-auto rounded-lg border border-zinc-200 bg-white shadow-sm">
           <table className="w-full text-sm">
             <thead className="border-b border-zinc-200 bg-zinc-50 text-left text-zinc-500">
               <tr>
-                <th className="px-4 py-3 font-medium">Order #</th>
-                <th className="px-4 py-3 font-medium">Product</th>
-                <th className="px-4 py-3 font-medium">Qty</th>
-                <th className="px-4 py-3 font-medium">Current Step</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Actions</th>
+                {columns.map((c) => (
+                  <th key={c.header} className="px-4 py-3 font-medium">{c.header}</th>
+                ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
               {orders.map((order) => (
                 <tr key={order.id} className="hover:bg-zinc-50">
-                  <td className="px-4 py-3 font-mono font-medium text-zinc-900">
-                    {order.orderNumber}
-                  </td>
-                  <td className="px-4 py-3 text-zinc-700">{order.productName}</td>
-                  <td className="px-4 py-3 text-zinc-700">{order.qty}</td>
-                  <td className="px-4 py-3 text-zinc-700">
-                    {order.currentStep?.name ?? "—"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={cn(
-                        "inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium",
-                        ORDER_STATUS_CLASS[order.status] ?? "bg-zinc-100 text-zinc-700"
-                      )}
-                    >
-                      {ORDER_STATUS_LABEL[order.status] ?? order.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    {order.status !== "COMPLETED" && (
-                      <button
-                        onClick={() => handleAdvance(order.id)}
-                        disabled={advancing === order.id}
-                        className="rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-500 disabled:opacity-50"
-                      >
-                        {advancing === order.id ? "Moving..." : "Advance →"}
-                      </button>
-                    )}
-                  </td>
+                  {columns.map((c) => c.cell(order))}
                 </tr>
               ))}
             </tbody>
