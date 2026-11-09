@@ -2,6 +2,33 @@ import { prisma } from "@/lib/db"
 import { ok, err } from "@/lib/api-response"
 import { StepLogStatus } from "@prisma/client"
 
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url)
+  const orderId = searchParams.get("orderId")
+
+  const consumptions = await prisma.resourceConsumption.findMany({
+    where: orderId
+      ? { orderStepLog: { orderId } }
+      : undefined,
+    include: {
+      resource: { select: { id: true, name: true, unit: true, type: true } },
+      orderStepLog: {
+        select: {
+          id: true,
+          status: true,
+          startedAt: true,
+          completedAt: true,
+          order: { select: { id: true, orderNumber: true, productName: true, status: true } },
+          step: { select: { id: true, name: true, sequenceOrder: true } },
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  })
+
+  return ok(consumptions)
+}
+
 export async function POST(request: Request) {
   const body = await request.json()
   const { orderStepLogId, resourceId, qtyUsed } = body
