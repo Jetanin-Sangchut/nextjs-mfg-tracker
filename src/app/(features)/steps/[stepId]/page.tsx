@@ -2,6 +2,8 @@ import { notFound } from "next/navigation"
 import { prisma } from "@/lib/db"
 import { StepView } from "./components/StepView"
 
+export const instant = false
+
 type Props = {
   params: Promise<{ stepId: string }>
 }

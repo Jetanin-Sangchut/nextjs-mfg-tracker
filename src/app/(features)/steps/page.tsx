@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/db"
 import { StepsView } from "./components/StepsView"
 
+export const instant = false
+
 export default async function StepsPage() {
   const steps = await prisma.step.findMany({
     orderBy: { sequenceOrder: "asc" },

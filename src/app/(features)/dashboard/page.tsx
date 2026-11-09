@@ -1,12 +1,16 @@
+import { Suspense } from "react"
 import { prisma } from "@/lib/db"
 import { DashboardView } from "./components/DashboardView"
 
-export default async function DashboardPage() {
+async function DashboardContent() {
   const orders = await prisma.order.findMany({
     include: { currentStep: true },
     orderBy: { createdAt: "desc" },
   })
+  return <DashboardView orders={orders} />
+}
 
+export default function DashboardPage() {
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
       <div className="mb-6">
@@ -15,7 +19,9 @@ export default async function DashboardPage() {
           Overview of all manufacturing orders
         </p>
       </div>
-      <DashboardView orders={orders} />
+      <Suspense fallback={<p className="text-sm text-zinc-400">Loading orders…</p>}>
+        <DashboardContent />
+      </Suspense>
     </main>
   )
 }
