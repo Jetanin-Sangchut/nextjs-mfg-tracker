@@ -3,11 +3,14 @@ import { prisma } from "@/lib/db"
 import { DashboardView } from "./components/DashboardView"
 
 async function DashboardContent() {
-  const orders = await prisma.order.findMany({
-    include: { currentStep: true },
-    orderBy: { createdAt: "desc" },
-  })
-  return <DashboardView orders={orders} />
+  const [orders, resources] = await Promise.all([
+    prisma.order.findMany({
+      include: { currentStep: true },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.resource.findMany({ orderBy: { name: "asc" } }),
+  ])
+  return <DashboardView orders={orders} resources={resources} />
 }
 
 export default function DashboardPage() {
