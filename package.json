@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node node_modules/prisma/build/index.js migrate deploy && tsx prisma/seed.ts && next build",
+    "build": "node node_modules/prisma/build/index.js generate && next build",
     "start": "next start",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
