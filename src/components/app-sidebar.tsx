@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation"
 import Link from "next/link"
-import { LayoutDashboard, ClipboardList, GitBranch } from "lucide-react"
+import { LayoutDashboard, ClipboardList, GitBranch, ScrollText } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -18,6 +18,7 @@ const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/orders", label: "Orders", icon: ClipboardList },
   { href: "/steps", label: "Steps", icon: GitBranch },
+  { href: "/logs", label: "Logs", icon: ScrollText },
 ] as const
 
 export function AppSidebar() {
