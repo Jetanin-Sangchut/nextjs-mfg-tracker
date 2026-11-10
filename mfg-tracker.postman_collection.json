@@ -1,0 +1,576 @@
+{
+  "info": {
+    "_postman_id": "b2df53a9-d0ff-4731-a9bd-32b96f568c58",
+    "name": "mfg-tracker",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "25861255"
+  },
+  "item": [
+    {
+      "name": "GET health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/health",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "health"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET steps",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/steps",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "steps"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET resources",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/resources",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "resources"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET orders",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/orders",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "orders"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET order by id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/orders/:id",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "orders", ":id"],
+          "variable": [
+            {
+              "key": "id",
+              "value": ""
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST resource-logs (manual)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"orderStepLogId\": \"\",\n  \"resourceId\": \"\",\n  \"qtyUsed\": 1\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/resource-logs",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["api", "resource-logs"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST submit order",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "  {\r\n    \"orderNumber\": \"ORD-004\",\r\n    \"productName\": \"A4 Paper Box\",\r\n    \"qty\": 10,\r\n    \"resources\": [\r\n      { \"resourceId\": \"cmw6yfixc0003swp4r6eeu1ci\",    \"stepSequence\": 1, \"qtyUsed\": 10 },\r\n      { \"resourceId\": \"cmw6yfixc0006swp4c0jz1azx\", \"stepSequence\": 2, \"qtyUsed\": 1 },\r\n      { \"resourceId\": \"cmw6yfixc0009swp42fi5ijmj\",          \"stepSequence\": 3, \"qtyUsed\": 2 }\r\n    ]\r\n  }",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/orders/submit",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "orders",
+            "submit"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "POST submit order",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "  {\r\n    \"orderNumber\": \"ORD-003\",\r\n    \"productName\": \"A4 Paper Box\",\r\n    \"qty\": 100,\r\n    \"resources\": [\r\n      { \"resourceId\": \"<paper-bundle-id>\",    \"stepSequence\": 1, \"qtyUsed\": 100 },\r\n      { \"resourceId\": \"<cutting-machine-id>\", \"stepSequence\": 2, \"qtyUsed\": 1 },\r\n      { \"resourceId\": \"<labour-id>\",          \"stepSequence\": 3, \"qtyUsed\": 2 }\r\n    ]\r\n  }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/orders/submit",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "orders",
+                "submit"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "text",
+          "header": null,
+          "cookie": [],
+          "body": "{\r\n    \"data\": {\r\n        \"id\": \"cmw9atj0h00003xgk551ew3gv\",\r\n        \"orderNumber\": \"ORD-003\",\r\n        \"productName\": \"A4 Paper Box\",\r\n        \"qty\": 100\r\n    }\r\n}"
+        }
+      ]
+    },
+    {
+      "name": "POST advance STEP A PREPARING",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/orders/:orderId/advance",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "orders",
+            ":orderId",
+            "advance"
+          ],
+          "variable": [
+            {
+              "key": "orderId",
+              "value": "cmw9e0ymd00021326ictn6wrl"
+            }
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "POST advance STEP A PREPARING",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/orders/:orderId/advance",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "orders",
+                ":orderId",
+                "advance"
+              ],
+              "variable": [
+                {
+                  "key": "orderId",
+                  "value": "cmw9e0ymd00021326ictn6wrl"
+                }
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "text",
+          "header": null,
+          "cookie": [],
+          "body": "{\r\n    \"data\": {\r\n        \"completed\": false,\r\n        \"stepName\": \"Processing\"\r\n    }\r\n}"
+        }
+      ]
+    },
+    {
+      "name": "POST advance STEP B PROCESSING",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/orders/:orderId/advance",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "orders",
+            ":orderId",
+            "advance"
+          ],
+          "variable": [
+            {
+              "key": "orderId",
+              "value": "cmw9e0ymd00021326ictn6wrl"
+            }
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "POST advance STEP B PROCESSING",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/orders/:orderId/advance",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "orders",
+                ":orderId",
+                "advance"
+              ],
+              "variable": [
+                {
+                  "key": "orderId",
+                  "value": "cmw9e0ymd00021326ictn6wrl"
+                }
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "text",
+          "header": null,
+          "cookie": [],
+          "body": "{\r\n    \"data\": {\r\n        \"completed\": false,\r\n        \"stepName\": \"Packaging\"\r\n    }\r\n}"
+        }
+      ]
+    },
+    {
+      "name": "POST advance STEP C PACKAGING",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/orders/:orderId/advance",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "orders",
+            ":orderId",
+            "advance"
+          ],
+          "variable": [
+            {
+              "key": "orderId",
+              "value": "cmw9e0ymd00021326ictn6wrl"
+            }
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "POST advance STEP C PACKAGING",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/orders/:orderId/advance",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "orders",
+                ":orderId",
+                "advance"
+              ],
+              "variable": [
+                {
+                  "key": "orderId",
+                  "value": "cmw9e0ymd00021326ictn6wrl"
+                }
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "text",
+          "header": null,
+          "cookie": [],
+          "body": "{\r\n    \"data\": {\r\n        \"completed\": true,\r\n        \"stepName\": null\r\n    }\r\n}"
+        }
+      ]
+    },
+    {
+      "name": "POST cancel orders",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/orders/:id/cancel",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "orders",
+            ":id",
+            "cancel"
+          ],
+          "variable": [
+            {
+              "key": "id",
+              "value": "cmw9b764e00033xgkc7pz7504"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST approve orders",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/orders/:id/approve",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "orders",
+            ":id",
+            "approve"
+          ],
+          "variable": [
+            {
+              "key": "id",
+              "value": "cmw91uu77000124ghkqw951vu"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST reject orders",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/orders/:id/reject",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "orders",
+            ":id",
+            "reject"
+          ],
+          "variable": [
+            {
+              "key": "id",
+              "value": "cmw9e0ymd00021326ictn6wrl"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "POST customer-reject orders",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/orders/:id/customer-reject",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "orders",
+            ":id",
+            "customer-reject"
+          ],
+          "variable": [
+            {
+              "key": "id",
+              "value": "cmw9e0ymd00021326ictn6wrl"
+            }
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "POST customer-reject orders",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/orders/:id/customer-reject",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "orders",
+                ":id",
+                "customer-reject"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "cmw9e0ymd00021326ictn6wrl"
+                }
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "text",
+          "header": null,
+          "cookie": [],
+          "body": "{\r\n    \"data\": {\r\n        \"customerRejected\": true,\r\n        \"reason\": null\r\n    }\r\n}"
+        }
+      ]
+    },
+    {
+      "name": "GET verify logs",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/orders/:id/logs",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "orders",
+            ":id",
+            "logs"
+          ],
+          "variable": [
+            {
+              "key": "id",
+              "value": "cmw91uu77000124ghkqw951vu"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "GET steps logs",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/resource-logs",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "resource-logs"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
