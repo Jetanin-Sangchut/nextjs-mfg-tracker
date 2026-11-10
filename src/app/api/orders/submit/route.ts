@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache"
 import { OrderStatus, StepLogStatus } from "@prisma/client"
 import { prisma } from "@/lib/db"
 import { ok, err } from "@/lib/api-response"
@@ -30,55 +31,69 @@ export async function POST(req: Request) {
     if (!step) return err(`Invalid stepSequence: ${entry.stepSequence}`)
   }
 
-  const dbResources = await Promise.all(
-    resources.map((entry) => prisma.resource.findUnique({ where: { id: entry.resourceId } }))
-  )
+  const uniqueResourceIds = [...new Set(resources.map((e) => e.resourceId))]
+  const dbResources = await prisma.resource.findMany({ where: { id: { in: uniqueResourceIds } } })
+  const dbResourceMap = new Map(dbResources.map((r) => [r.id, r]))
 
-  for (let i = 0; i < resources.length; i++) {
-    const dbResource = dbResources[i]
-    if (!dbResource) return err("Resource not found", 404)
-    if (dbResource.availableQty < resources[i].qtyUsed)
-      return err(`Insufficient resource: ${dbResource.name}`, 409)
+  for (const id of uniqueResourceIds) {
+    if (!dbResourceMap.has(id)) return err("Resource not found", 404)
   }
 
-  const order = await prisma.$transaction(async (tx) => {
-    const created = await tx.order.create({
-      data: { orderNumber, productName, qty, status: OrderStatus.PENDING, currentStepId: steps[0].id },
-    })
+  const totalByResource = new Map<string, number>()
+  for (const entry of resources) {
+    totalByResource.set(entry.resourceId, (totalByResource.get(entry.resourceId) ?? 0) + entry.qtyUsed)
+  }
+  for (const [id, total] of totalByResource) {
+    const r = dbResourceMap.get(id)!
+    if (r.availableQty < total) return err(`Insufficient resource: ${r.name}`, 409)
+  }
 
-    const logs = await Promise.all(
-      steps.map((step) =>
-        tx.orderStepLog.create({
-          data: {
-            orderId: created.id,
-            stepId: step.id,
-            status: StepLogStatus.IN_PROGRESS,
-            actionNote: `Queued for step ${step.sequenceOrder}`,
-          },
+  let order
+  try {
+    order = await prisma.$transaction(async (tx) => {
+      const created = await tx.order.create({
+        data: { orderNumber, productName, qty, status: OrderStatus.PENDING, currentStepId: steps[0].id },
+      })
+
+      const logs = await Promise.all(
+        steps.map((step) =>
+          tx.orderStepLog.create({
+            data: {
+              orderId: created.id,
+              stepId: step.id,
+              status: StepLogStatus.IN_PROGRESS,
+              actionNote: `Queued for step ${step.sequenceOrder}`,
+            },
+          })
+        )
+      )
+
+      // Aggregate decrements by resourceId to avoid concurrent same-row updates
+      for (const [id, total] of totalByResource) {
+        await tx.resource.update({
+          where: { id },
+          data: { availableQty: { decrement: total } },
+        })
+      }
+
+      await Promise.all(
+        resources.map((entry) => {
+          const step = steps.find((s) => s.sequenceOrder === entry.stepSequence)!
+          const log = logs.find((l) => l.stepId === step.id)!
+          return tx.resourceConsumption.create({
+            data: { orderStepLogId: log.id, resourceId: entry.resourceId, qtyUsed: entry.qtyUsed },
+          })
         })
       )
-    )
 
-    await Promise.all(
-      resources.map((entry) => {
-        const log = logs.find((l) => {
-          const step = steps.find((s) => s.sequenceOrder === entry.stepSequence)
-          return step && l.stepId === step.id
-        })!
-        return Promise.all([
-          tx.resource.update({
-            where: { id: entry.resourceId },
-            data: { availableQty: { decrement: entry.qtyUsed } },
-          }),
-          tx.resourceConsumption.create({
-            data: { orderStepLogId: log.id, resourceId: entry.resourceId, qtyUsed: entry.qtyUsed },
-          }),
-        ])
-      })
-    )
+      return created
+    }, { timeout: 30000 })
+  } catch (e) {
+    console.error("[orders/submit]", e)
+    return err("Failed to create order", 500)
+  }
 
-    return created
-  })
-
+  revalidatePath("/orders")
+  revalidatePath("/dashboard")
   return ok({ orderId: order.id, orderNumber: order.orderNumber, productName: order.productName, qty: order.qty }, 201)
 }

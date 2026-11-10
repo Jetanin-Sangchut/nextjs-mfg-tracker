@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/db"
-import { ORDER_STATUS, STEP_LOG_STATUS } from "../types/order"
+import { restoreWorkerResources } from "@/lib/restore-resources"
+import { ORDER_STATUS } from "../types/order"
 
 export async function advanceOrder(orderId: string) {
   const order = await prisma.order.findUnique({
@@ -19,38 +20,39 @@ export async function advanceOrder(orderId: string) {
   const currentSeq = order.currentStep?.sequenceOrder ?? 0
   const nextStep = steps.find(({ sequenceOrder }) => sequenceOrder > currentSeq)
 
-  // Complete current step log if exists
-  if (order.currentStepId) {
-    await prisma.orderStepLog.updateMany({
-      where: { orderId, stepId: order.currentStepId, status: STEP_LOG_STATUS.IN_PROGRESS },
-      data: { status: "COMPLETED", completedAt: new Date() },
-    })
-  }
+  await prisma.$transaction(async (tx) => {
+    if (order.currentStepId) {
+      const currentLog = await tx.orderStepLog.findFirst({
+        where: { orderId, stepId: order.currentStepId, status: "IN_PROGRESS" },
+        include: { resourceConsumptions: { include: { resource: true } } },
+      })
+      if (currentLog) {
+        await tx.orderStepLog.update({
+          where: { id: currentLog.id },
+          data: { status: "COMPLETED", completedAt: new Date() },
+        })
+        await restoreWorkerResources(tx, currentLog.resourceConsumptions)
+      }
+    }
 
-  // No next step — order is fully complete
-  if (!nextStep) {
-    await prisma.order.update({
-      where: { id: orderId },
-      data: { status: ORDER_STATUS.COMPLETED, currentStepId: null },
-    })
-    revalidatePath("/orders")
-    revalidatePath("/dashboard")
-    return { success: true, completed: true }
-  }
-
-  // Advance to next step
-  await prisma.$transaction([
-    prisma.order.update({
-      where: { id: orderId },
-      data: { status: ORDER_STATUS.IN_PROGRESS, currentStepId: nextStep.id },
-    }),
-    prisma.orderStepLog.create({
-      data: { orderId, stepId: nextStep.id, status: STEP_LOG_STATUS.IN_PROGRESS, actionNote: `Moved to ${nextStep.name}` },
-    }),
-  ])
+    if (nextStep) {
+      await tx.order.update({
+        where: { id: orderId },
+        data: { status: ORDER_STATUS.IN_PROGRESS, currentStepId: nextStep.id },
+      })
+      await tx.orderStepLog.create({
+        data: { orderId, stepId: nextStep.id, status: "IN_PROGRESS", actionNote: `Moved to ${nextStep.name}` },
+      })
+    } else {
+      await tx.order.update({
+        where: { id: orderId },
+        data: { status: ORDER_STATUS.COMPLETED, currentStepId: order.currentStepId },
+      })
+    }
+  })
 
   revalidatePath("/orders")
   revalidatePath("/dashboard")
-  revalidatePath(`/steps/${nextStep.id}`)
-  return { success: true, completed: false, stepName: nextStep.name }
+  if (nextStep) revalidatePath(`/steps/${nextStep.id}`)
+  return { success: true, completed: !nextStep, stepName: nextStep?.name ?? null }
 }
