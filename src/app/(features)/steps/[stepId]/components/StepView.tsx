@@ -13,7 +13,7 @@ type Props = {
       resourceConsumptions: ResourceConsumption[]
     }>
   }>
-  resources: Array<{ id: string; name: string; unit: string; type: RESOURCE_TYPE }>
+  resources: Array<{ id: string; name: string; unit: string; type: RESOURCE_TYPE; availableQty: number }>
 }
 
 export function StepView({ step, orders, resources }: Props) {

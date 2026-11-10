@@ -271,10 +271,14 @@ export async function update<Feature>(id: string, formData: FormData) {
 
 ### 10.3 Server Component Page (`page.tsx`)
 
+> **⚠️ Cache opt-out:** โปรเจกต์นี้ใช้ `nextConfig.cacheComponents` — ห้ามใช้ `export const dynamic = "force-dynamic"` จะ error ที่ build time ให้ใช้ `export const instant = false` แทนเสมอ
+
 ```tsx
 // page.tsx — thin, fetch + pass props only
 import { prisma } from "@/lib/db"
 import { <Feature>View } from "./components/<Feature>View"
+
+export const instant = false   // ← opt out of caching (ห้ามใช้ dynamic = "force-dynamic")
 
 export default async function <Feature>Page() {
   const items = await prisma.<feature>.findMany({ orderBy: { createdAt: "desc" } })
